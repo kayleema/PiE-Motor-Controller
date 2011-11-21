@@ -5,13 +5,12 @@
  * This is the simplest possible version of firmware
  * for the PiE motor controller.  This version of the 
  * firmware will only support setting the motor PWM 
- * frequency.  Later, will will develop a more 
- * sophisticated version.
+ * frequency and the direction.
  */
 
 #include <Wire.h>
 
-//whether to write debig messages to serial
+//whether to write debug messages to serial
 #define DEBUG 1
 
 //I2C bus address (hardcoded)
@@ -20,15 +19,15 @@ byte I2C_ADDRESS = 10;
 //TODO: check these definitions
 
 //H-Bridge Pin Definitions
-int IN1 = 3; //forward
-int IN2 = 5; //reverse (brakes if both IN1 and IN2 set)
-int D1  = 6; //disable (normally low)
-int D2  = 7; //disable (normally high)
-
-int FS  = 10; //fault status
+int IN1 =  3; //forward
+int IN2 =  5; //reverse (brakes if both IN1 and IN2 set)
+int D1  =  6; //disable (normally low)
+int D2  =  7; //disable (normally high)
+int FS  = 10; //fault status (currently not used)
+int FB  =  0; //feedback (currently not used)
 
 //LED Pin Definitions
-int LED_RED = 8;
+int LED_RED   = 8;
 int LED_GREEN = 9;
 
 void setup()
@@ -53,25 +52,44 @@ void setup()
 
 void loop(){
   delay(100);
-  #ifdef DEBUG
-    Serial.begin(9600);
-  #endif
 }
 
 void receiveEvent(int count){
-  char c;
-  while(Wire.available() > 0){
-    c = Wire.receive();
+  //read the instruction
+  byte proc = Wire.receive();
+  //Handle setMotor Instruction
+  if(proc == 0x01){
+    //Motor instruction must take two inputs
+    if(count != 3){
+      #ifdef DEBUG
+        Serial.println("ERROR: setMotor takes two inputs");
+      #endif
+      return;
+    }
+    else{
+      //read input
+      byte dir = Wire.receive();
+      byte value = Wire.receive();
+      #ifdef DEBUG
+        if(dir){
+          Serial.print("setMotor: F");
+        }
+        else{
+          Serial.print("setMotor: R");
+        }
+        Serial.println(value);
+      #endif
+      //set motor speed/direction
+      setMotor(dir, value);
+    }
   }
-  #ifdef DEBUG
-    Serial.print("received: ");
-    Serial.println(c);
-  #endif
-  setMotor(c);
 }
 
-void setMotor(char value){
-  if(value >= 0){
+//sets the speed/direction of the motor
+//called by reveiveEvent()
+void setMotor(byte dir, byte value){
+  //set direction
+  if(dir == 1){
     //set direction forward
     digitalWrite(IN1, HIGH);
     digitalWrite(IN1, LOW);
@@ -86,17 +104,8 @@ void setMotor(char value){
     //set LED RED
     digitalWrite(LED_RED, HIGH);
     digitalWrite(LED_GREEN, LOW);
-    //make value positive to get ready for PWM
-    value = -value;
   }
   
-  //scale to PWM Freq
-  byte pwm = (byte)(value) * 2;
-  #ifdef DEBUG
-    Serial.print("pwm: ");
-    Serial.println(pwm);
-  #endif
-  
   //set pwm
-  analogWrite(D1, pwm);
+  analogWrite(D1, value);
 }
