@@ -10,13 +10,11 @@
 
 #include <Wire.h>
 
-//whether to write debug messages to serial
+//whether to print debug messages to serial
 #define DEBUG 1
 
 //I2C bus address (hardcoded)
 byte I2C_ADDRESS = 10;
-
-//TODO: check these definitions
 
 //H-Bridge Pin Definitions
 int IN1 =  3; //forward
@@ -36,7 +34,7 @@ void setup()
   Wire.begin(I2C_ADDRESS);
   Wire.onReceive(receiveEvent);
   
-  //Setup IO Pins
+  //Setup Digital IO Pins
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
   pinMode(D1 , OUTPUT);
@@ -51,6 +49,7 @@ void setup()
 }
 
 void loop(){
+  //nothing to do here--everything triggered by interrupts
   delay(100);
 }
 
@@ -61,16 +60,18 @@ void receiveEvent(int count){
   if(proc == 0x01){
     //Motor instruction must take two inputs
     if(count != 3){
-      #ifdef DEBUG
-        Serial.println("ERROR: setMotor takes two inputs");
-      #endif
-      //set both LEDs
+      //set both LEDs for error indication
       digitalWrite(LED_RED, HIGH);
       digitalWrite(LED_GREEN, HIGH);
+      #ifdef DEBUG
+        Serial.print("ERROR: setMotor takes two input bytes\n   ->");
+        Serial.print(count);
+        Serial.println(" given")
+      #endif
       return;
     }
     else{
-      //read input
+      //read inputs
       byte dir = Wire.receive();
       byte value = Wire.receive();
       #ifdef DEBUG
@@ -89,7 +90,8 @@ void receiveEvent(int count){
 }
 
 //sets the speed/direction of the motor
-//called by reveiveEvent()
+//byte dir is either 0=rev or 1=fwd
+//byte value is the pwm value (0-255)
 void setMotor(byte dir, byte value){
   //set direction
   if(dir == 1){

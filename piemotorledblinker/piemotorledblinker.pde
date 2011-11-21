@@ -6,7 +6,6 @@
  * sure the microcontroller is functioning.
  */
  
- 
 //LED Pin Definitions
 int LED_RED = 8;
 int LED_GREEN = 9;
