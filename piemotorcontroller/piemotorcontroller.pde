@@ -64,6 +64,9 @@ void receiveEvent(int count){
       #ifdef DEBUG
         Serial.println("ERROR: setMotor takes two inputs");
       #endif
+      //set both LEDs
+      digitalWrite(LED_RED, HIGH);
+      digitalWrite(LED_GREEN, HIGH);
       return;
     }
     else{
