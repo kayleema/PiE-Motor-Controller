@@ -1,2 +1,12 @@
 Firmware for the Motor Controller developed in-house
-for Berkeley Pioneers in Engineering.
+by Berkeley Pioneers in Engineering.
+
+The following projects can be opened with the 
+Arduino IDE available at "www.arduino.cc":
+
+-- Basic firmware for the motor controller is under 
+   the directory: "piemotorcontroller"
+
+-- Firmware which blinks the status LEDs to confirm 
+   that the microcontroller is working is under the  
+   directory: "piemotorledblinker"
