@@ -2,7 +2,7 @@ Firmware for the Motor Controller developed in-house
 by Berkeley Pioneers in Engineering.
 
 The following projects can be opened with the 
-Arduino IDE available at "www.arduino.cc":
+Arduino IDE available at www.arduino.cc
 
 -- Basic firmware for the motor controller is under 
    the directory: "piemotorcontroller"
