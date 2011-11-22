@@ -17,16 +17,26 @@
 byte I2C_ADDRESS = 10;
 
 //H-Bridge Pin Definitions
-int IN1 =  3; //forward
-int IN2 =  5; //reverse (brakes if both IN1 and IN2 set)
-int D1  =  6; //disable (normally low)
-int D2  =  7; //disable (normally high)
-int FS  = 10; //fault status (currently not used)
-int FB  =  0; //feedback (currently not used)
+const int IN1 =  3; //forward
+const int IN2 =  5; //reverse (brakes if both IN1 and IN2 set)
+const int D1  =  6; //disable (normally low)
+const int D2  =  7; //disable (normally high)
+const int FS  = 10; //fault status (currently not used)
+const int FB  =  0; //feedback (currently not used)
 
 //LED Pin Definitions
-int LED_RED   = 8;
-int LED_GREEN = 9;
+const int LED_RED   = 8;
+const int LED_GREEN = 9;
+
+//buffer size
+const int BUFFER_SIZE = 256;
+//Buffer
+byte reg[BUFFER_SIZE];
+//current buffer address pointer
+byte addr = 0;
+//buffer addresses
+const int REG_DIR = 0x01;
+const int REG_PWM = 0x02;
 
 void setup()
 {
@@ -49,52 +59,34 @@ void setup()
 }
 
 void loop(){
-  //nothing to do here--everything triggered by interrupts
-  delay(100);
+  setMotorDir(reg[REG_DIR]);
+  setMotorPWM(reg[REG_PWM]);
+  //write debug data
+  #ifdef DEBUG
+    Serial.print(reg[REG_DIR]);
+    Serial.print(" ");
+    Serial.print(reg[REG_PWM]);
+    Serial.print(" ");
+    Serial.println(addr);
+  #endif
 }
 
 void receiveEvent(int count){
-  //read the instruction
-  byte proc = Wire.receive();
-  //Handle setMotor Instruction
-  if(proc == 0x01){
-    //Motor instruction must take two inputs
-    if(count != 3){
-      //set both LEDs for error indication
-      digitalWrite(LED_RED, HIGH);
-      digitalWrite(LED_GREEN, HIGH);
-      #ifdef DEBUG
-        Serial.print("ERROR: setMotor takes two input bytes\n   ->");
-        Serial.print(count);
-        Serial.println(" given")
-      #endif
-      return;
+  //set address
+  addr = Wire.receive();
+  //read data
+  while(Wire.available()){
+    if(addr >= BUFFER_SIZE){
+      error("addr out of range");
     }
-    else{
-      //read inputs
-      byte dir = Wire.receive();
-      byte value = Wire.receive();
-      #ifdef DEBUG
-        if(dir){
-          Serial.print("setMotor: F");
-        }
-        else{
-          Serial.print("setMotor: R");
-        }
-        Serial.println(value);
-      #endif
-      //set motor speed/direction
-      setMotor(dir, value);
-    }
+    //write to registers
+    reg[addr++] = Wire.receive();
   }
 }
 
-//sets the speed/direction of the motor
-//byte dir is either 0=rev or 1=fwd
-//byte value is the pwm value (0-255)
-void setMotor(byte dir, byte value){
+void setMotorDir(byte dir){
   //set direction
-  if(dir == 1){
+  if (dir == 1){
     //set direction forward
     digitalWrite(IN1, HIGH);
     digitalWrite(IN1, LOW);
@@ -102,7 +94,7 @@ void setMotor(byte dir, byte value){
     digitalWrite(LED_RED, LOW);
     digitalWrite(LED_GREEN, HIGH);
   }
-  else{
+  else if (dir == 0){
     //set direction backward
     digitalWrite(IN1, LOW);
     digitalWrite(IN1, HIGH);
@@ -110,7 +102,24 @@ void setMotor(byte dir, byte value){
     digitalWrite(LED_RED, HIGH);
     digitalWrite(LED_GREEN, LOW);
   }
-  
+  else{
+    error("Unrecognized direction");
+  }
+}
+
+void setMotorPWM(byte value){
   //set pwm
   analogWrite(D1, value);
+}
+
+void error(char* message){
+  //set both LEDs on
+  digitalWrite(LED_RED, HIGH);
+  digitalWrite(LED_GREEN, HIGH);
+  
+  //write debug data
+  #ifdef DEBUG
+    Serial.print("ERROR:  ");
+    Serial.println(message);
+  #endif
 }
