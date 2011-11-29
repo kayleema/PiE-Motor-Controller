@@ -33,7 +33,7 @@ const int BUFFER_SIZE = 256;
 //Buffer
 byte reg[BUFFER_SIZE];
 //current buffer address pointer
-byte addr = 0;
+int addr = 0;
 //buffer addresses
 const int REG_DIR = 0x01;
 const int REG_PWM = 0x02;
@@ -63,9 +63,9 @@ void loop(){
   setMotorPWM(reg[REG_PWM]);
   //write debug data
   #ifdef DEBUG
-    Serial.print(reg[REG_DIR]);
+    Serial.print(int(reg[REG_DIR]));
     Serial.print(" ");
-    Serial.print(reg[REG_PWM]);
+    Serial.print(int(reg[REG_PWM]));
     Serial.print(" ");
     Serial.println(addr);
   #endif
