@@ -4,9 +4,14 @@ by Berkeley Pioneers in Engineering.
 The following projects can be opened with the 
 Arduino IDE available at www.arduino.cc
 
--- Basic firmware for the motor controller is under 
-   the directory: "piemotorcontroller"
+-- "/piemotorcontroller": Basic firmware for the 
+   motor controller.
 
--- Firmware which blinks the status LEDs to confirm 
-   that the microcontroller is working is under the  
-   directory: "piemotorledblinker"
+-- "/piemotorledblinker": Firmware which blinks the 
+   status LEDs to confirm that the microcontroller is
+   working.
+
+-- "/i2ctester": Firmware running on another Arduino 
+   which translates commands sent via the serial port
+   to I2C messages for the purpose of sending test 
+   commands to the motor controller.
