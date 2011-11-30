@@ -37,12 +37,16 @@ int addr = 0;
 //buffer addresses
 const int REG_DIR = 0x01;
 const int REG_PWM = 0x02;
+const int REG_FB  = 0x10;
+const int REB_FB2 = 0x11;
 
+//called on startup
 void setup()
 {
   //Setup I2C
   Wire.begin(I2C_ADDRESS);
   Wire.onReceive(receiveEvent);
+  Wire.onRequest(requestEvent);
   
   //Setup Digital IO Pins
   pinMode(IN1, OUTPUT);
@@ -55,9 +59,11 @@ void setup()
   //Setup Serial Port 
   #ifdef DEBUG
     Serial.begin(9600);
+    delay(30);
   #endif
 }
 
+//called continuously after startup
 void loop(){
   setMotorDir(reg[REG_DIR]);
   setMotorPWM(reg[REG_PWM]);
@@ -71,6 +77,7 @@ void loop(){
   #endif
 }
 
+//called when I2C data is received
 void receiveEvent(int count){
   //set address
   addr = Wire.receive();
@@ -84,6 +91,15 @@ void receiveEvent(int count){
   }
 }
 
+//called when I2C data is reqested
+void requestEvent()
+{
+  Wire.send(reg[addr++]);
+}
+
+//set motor direction
+//Params:
+//   byte dir:  1=fwd, 0=rev, 2=break
 void setMotorDir(byte dir){
   //set direction
   if (dir == 1){
@@ -102,21 +118,38 @@ void setMotorDir(byte dir){
     digitalWrite(LED_RED, HIGH);
     digitalWrite(LED_GREEN, LOW);
   }
+  else if (dir == 2){
+    //set braking
+    digitalWrite(IN1, HIGH);
+    digitalWrite(IN1, HIGH);
+    //set LEDs OFF
+    digitalWrite(LED_RED, LOW);
+    digitalWrite(LED_GREEN, LOW);
+  }
+  else if (dir == 3){
+    error("break/rev not implemented");
+  }
+  else if (dir == 4){
+    error("break/fwd not implemented");
+  }
   else{
     error("Unrecognized direction");
   }
 }
 
+//Set motor PWM value (between 0-255)
 void setMotorPWM(byte value){
   //set pwm
   analogWrite(D1, value);
 }
 
+//sets both LEDs on to indicate error state and delays for 500ms
+//also writes the message to serial if debugging enabled
 void error(char* message){
   //set both LEDs on
   digitalWrite(LED_RED, HIGH);
   digitalWrite(LED_GREEN, HIGH);
-  
+  delay(500);
   //write debug data
   #ifdef DEBUG
     Serial.print("ERROR:  ");

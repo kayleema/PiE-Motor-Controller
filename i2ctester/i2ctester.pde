@@ -6,17 +6,24 @@
  * Opens an interactive terminal on the serial port 
  * and displays instructions for use.
  *
+ * The address of this device is hardcoded 
+ * using the variable "MASTER_ADDRESS" below.
+ * Upon startup, the user is prompted for the address
+ * of the device to talk to
+ *
  * On a unix system with pyserial installed, run: 
- * For Duemilanove:  
- *    python -m serial.tools.miniterm -p "/dev/tty.usbmodem411" -e
  * For Arduino Uno:  
+ *    python -m serial.tools.miniterm -p "/dev/tty.usbmodem411" -e
+ * For Arduino Duemilanove:  
  *    python -m serial.tools.miniterm -p "/dev/tty.usbserial-A900cehS" -e
  */
 
 #include <Wire.h>
  
-//I2C bus address (hardcoded)
-byte I2C_ADDRESS = 10;
+//address with which to talk to
+byte I2C_ADDRESS;
+//address of this device (hardcoded)
+byte MASTER_ADDRESS = 13;
 
 //buffer addresses
 const int REG_DIR = 0x01;
@@ -25,13 +32,13 @@ const int REG_PWM = 0x02;
 void setup()
 {
   //Setup I2C
-  Wire.begin(13);
+  Wire.begin(MASTER_ADDRESS);
   //Setup Serial
   Serial.begin(9600);
   //get I2C address
   Serial.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
   Serial.println("\n\n\n===========================================================");
-  Serial.println("Welcome to PiE Serial to I2C");
+  Serial.println("Welcome to PiE I2C Tester");
   Serial.println("Please Enter the device address with which you would");
   Serial.println("like to communicate.");
   Serial.print("\nI2C Address:  ");
@@ -64,6 +71,7 @@ int inLength = 0;
 void loop(){
   //get transaction
   transactionLength = 0;
+  boolean clearnow = 0;
   while(1){
     //get byte
     Serial.print(">>> ");
@@ -79,6 +87,21 @@ void loop(){
         in[inLength+1] = '\0';
         break;
       }
+      else if(mybyte == 'r'){
+        Serial.println();
+        Serial.print("Requesting...");
+        Wire.requestFrom((int)I2C_ADDRESS, 1);
+        Serial.println("Received");
+        Serial.println(int(Wire.receive()));
+        Serial.print(">>> ");
+      }
+      else if(mybyte == 'c'){
+        clearnow = 1;
+        inLength = 100;
+        Serial.println();
+        Serial.println("Cleared");
+        break;
+      }
       else{
         in[inLength++] = mybyte;
       }
@@ -86,6 +109,12 @@ void loop(){
     //blank line indicates end of transaction
     if(inLength == 0){
       break;
+    }
+    //inLength == 0 indicated that we want to clear the transaction
+    else if(clearnow){
+      clearnow = 0;
+      transactionLength = 0;
+      Serial.println("Transaction buffer reset");
     }
     else{
       byte num = atoi((const char *)in);
