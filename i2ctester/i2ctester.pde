@@ -60,7 +60,7 @@ void setup()
   I2C_ADDRESS = atoi((const char*)tmp);
   Serial.println(int(I2C_ADDRESS));
   Serial.println("\nThank You.  To send data, enter a series of numbers in decimal,");
-  Serial.println("each one followed by a newline.  When ready to transmit the sequence, ");
+  Serial.println("each one followed by hitting return.  When ready to transmit the sequence, ");
   Serial.println("simply hit return again to send a blank line and the data will be sent.\n");
 }
 
