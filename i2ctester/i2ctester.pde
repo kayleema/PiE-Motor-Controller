@@ -2,16 +2,19 @@
  * Berkeley Pioneers in Engineering
  * PiE Motor Controller I2C Tester
  * 
- * Sends out I2C data coming from the serial port.
- * Opens an interactive terminal on the serial port 
- * and displays instructions for use.
+ * Sends out I2C data according to instructions from 
+ * the serial port--opens an interactive terminal on 
+ * the serial port and displays instructions for use.
+ * Note that pressing 'r' will request a single byte
+ * from the I2C device and pressing 'c' will clear 
+ * the transmit buffer.
  *
- * The address of this device is hardcoded 
- * using the variable "MASTER_ADDRESS" below.
- * Upon startup, the user is prompted for the address
- * of the device to talk to
+ * The address of this device is hardcoded  using the
+ * variable "MASTER_ADDRESS" below. Upon startup, the
+ * user is prompted for the address of the device to 
+ * talk to.
  *
- * On a unix system with pyserial installed, run: 
+ * On a unix system with pyserial installed, the following might be useful: 
  * For Arduino Uno:  
  *    python -m serial.tools.miniterm -p "/dev/tty.usbmodem411" -e
  * For Arduino Duemilanove:  
@@ -39,8 +42,7 @@ void setup()
   Serial.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
   Serial.println("\n\n\n===========================================================");
   Serial.println("Welcome to PiE I2C Tester");
-  Serial.println("Please Enter the device address with which you would");
-  Serial.println("like to communicate.");
+  Serial.println("Please Enter the device address with which to communicate.");
   Serial.print("\nI2C Address:  ");
   byte tmp[10];
   int curr = 0;
@@ -59,9 +61,11 @@ void setup()
   }
   I2C_ADDRESS = atoi((const char*)tmp);
   Serial.println(int(I2C_ADDRESS));
-  Serial.println("\nThank You.  To send data, enter a series of numbers in decimal,");
-  Serial.println("each one followed by hitting return.  When ready to transmit the sequence, ");
-  Serial.println("simply hit return again to send a blank line and the data will be sent.\n");
+  Serial.println("\nThank You.  To send data, enter a series of numbers in decimal, each ");
+  Serial.println("one followed by hitting return.  When ready to transmit the sequence,  ");
+  Serial.println("simply hit return again to send a blank line and the data will be sent.");
+  Serial.println("Pressing 'r' at any time will request a single byte from the I2C device");
+  Serial.println("and pressing 'c' will clear the transmit buffer.\n");
 }
 
 byte transaction[10];
