@@ -24,6 +24,8 @@ const int D2  =  7; //disable (normally high)
 const int FS  = 10; //fault status (currently not used)
 const int FB  =  0; //feedback (currently not used)
 
+const int EN  = A1; 
+
 //LED Pin Definitions
 const int LED_RED   = 8;
 const int LED_GREEN = 9;
@@ -53,6 +55,12 @@ void setup()
   pinMode(IN2, OUTPUT);
   pinMode(D1 , OUTPUT);
   pinMode(D2 , OUTPUT);
+  
+  pinMode(EN , OUTPUT);
+  digitalWrite(EN, HIGH);
+  digitalWrite(D1, LOW);
+  digitalWrite(D2, HIGH);
+  
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
   
@@ -105,7 +113,7 @@ void setMotorDir(byte dir){
   if (dir == 1){
     //set direction forward
     digitalWrite(IN1, HIGH);
-    digitalWrite(IN1, LOW);
+    digitalWrite(IN2, LOW);
     //set LED Green
     digitalWrite(LED_RED, LOW);
     digitalWrite(LED_GREEN, HIGH);
@@ -113,7 +121,7 @@ void setMotorDir(byte dir){
   else if (dir == 0){
     //set direction backward
     digitalWrite(IN1, LOW);
-    digitalWrite(IN1, HIGH);
+    digitalWrite(IN2, HIGH);
     //set LED RED
     digitalWrite(LED_RED, HIGH);
     digitalWrite(LED_GREEN, LOW);
@@ -140,7 +148,7 @@ void setMotorDir(byte dir){
 //Set motor PWM value (between 0-255)
 void setMotorPWM(byte value){
   //set pwm
-  analogWrite(D1, value);
+  analogWrite(D1, 255 - value);
 }
 
 //sets both LEDs on to indicate error state and delays for 500ms

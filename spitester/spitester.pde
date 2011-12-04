@@ -21,6 +21,7 @@
 
 #include <SPI.h>
 
+//See http://arduino.cc/en/Reference/SPI for more pin assignments
 int SS_PIN = 10;
 
 void setup(void){
