@@ -1,0 +1,23 @@
+Firmware for the Motor Controller developed in-house
+by Berkeley Pioneers in Engineering.
+
+The following projects can be opened with the Arduino 
+IDE available at www.arduino.cc
+
+-- "/piemotorcontroller": Basic firmware for the 
+   motor controller.
+
+-- "/piemotorledblinker": Firmware which blinks the 
+   status LEDs to confirm that the microcontroller is
+   working.
+
+-- "/i2ctester": Firmware running on another Arduino 
+   which translates commands sent via the serial port
+   to I2C messages for the purpose of sending test 
+   commands to the motor controller.
+
+-- "/spitester": Firmware to run on an Arduino which 
+   translates commands sent via the serial port to 
+   SPI data for the purpose of sending test commands.
+   Not used for the motor controller, but may be 
+   useful for testing some SPI sensors for PiE.
