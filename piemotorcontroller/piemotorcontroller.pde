@@ -14,7 +14,7 @@
 #define DEBUG 1
 
 //I2C bus address (hardcoded)
-byte I2C_ADDRESS = 0x0A;
+byte I2C_ADDRESS = 0x0C;
 
 //H-Bridge Pin Definitions
 const int IN1 =  3; //forward

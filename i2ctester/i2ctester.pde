@@ -26,7 +26,7 @@
 //address with which to talk to
 byte I2C_ADDRESS;
 //address of this device (hardcoded)
-byte MASTER_ADDRESS = 13;
+byte MASTER_ADDRESS =9;
 
 //buffer addresses
 const int REG_DIR = 0x01;
