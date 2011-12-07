@@ -16,15 +16,22 @@
 //I2C bus address (hardcoded)
 byte I2C_ADDRESS = 0x0C;
 
+//VERSION
+byte VERSION = 0x01;
+
 //H-Bridge Pin Definitions
 const int IN1 =  3; //forward
 const int IN2 =  5; //reverse (brakes if both IN1 and IN2 set)
 const int D1  =  6; //disable (normally low)
 const int D2  =  7; //disable (normally high)
 const int FS  = 10; //fault status (currently not used)
-const int FB  =  0; //feedback (currently not used)
-
+const int FB  = A0; //feedback
 const int EN  = A1; 
+
+//Encoder Pin Definitions 
+//TODO: check these
+const int ENCA = 2;
+const int ENCB = 3;
 
 //LED Pin Definitions
 const int LED_RED   = 8;
@@ -40,7 +47,12 @@ int addr = 0;
 const int REG_DIR = 0x01;
 const int REG_PWM = 0x02;
 const int REG_FB  = 0x10;
-const int REB_FB2 = 0x11;
+const int REG_ENC_CNT = 0x11;
+const int REG_ENC_RES = 0x11;
+
+const int REG_VER = 0x51;
+const int REG_DATE = 0x52;
+const int REG_TIME = 0x5B;
 
 //called on startup
 void setup()
@@ -64,6 +76,15 @@ void setup()
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
   
+  //setup registers
+  reg[REG_VER] = VERSION;
+  memcpy((void*)__DATE__, (&reg[REG_DATE]), 11);
+  memcpy((void*)__TIME__, (&reg[REG_TIME]), 8);
+  
+  //Encoder IRQ
+  attachInterrupt(0, encoderChangeA, CHANGE);
+  attachInterrupt(1, encoderChangeB, CHANGE);
+  
   //Setup Serial Port 
   #ifdef DEBUG
     Serial.begin(9600);
@@ -75,6 +96,11 @@ void setup()
 void loop(){
   setMotorDir(reg[REG_DIR]);
   setMotorPWM(reg[REG_PWM]);
+  (*((word*)(reg + REG_FB))) = analogRead(FB);
+  if(reg[REG_ENC_RES]!=0){
+    reg[REG_ENC_RES] = 0;
+    reg[REG_ENC_CNT] = 0;
+  }
   //write debug data
   #ifdef DEBUG
     Serial.print(int(reg[REG_DIR]));
@@ -163,4 +189,28 @@ void error(char* message){
     Serial.print("ERROR:  ");
     Serial.println(message);
   #endif
+}
+
+//Encoder Interrupts
+boolean enca = 0;
+boolean encb = 0;
+//PIN2: ENCA
+void encoderChangeA(){
+  enca = digitalRead(ENCA);
+  if(enca == encb){//rising
+    (*((long*)(&reg[REG_ENC_CNT])))++;
+  }
+  else{//falling
+    (*((long*)(&reg[REG_ENC_CNT])))--;
+  }
+}
+
+//PIN3: ENCB
+void encoderChangeB(){
+  if(enca != encb){//rising
+    (*((long*)(&reg[REG_ENC_CNT])))++;
+  }
+  else{//falling
+    (*((long*)(&reg[REG_ENC_CNT])))--;
+  }
 }
