@@ -88,7 +88,7 @@ void loop(){
       if((mybyte == '\n') || (mybyte == '\r')){
         delay(100);
         Serial.flush();
-        in[inLength+1] = '\0';
+        in[inLength] = '\0';
         break;
       }
       else if(mybyte == 'r'){
@@ -106,6 +106,12 @@ void loop(){
         Serial.println("Cleared");
         break;
       }
+      else if(mybyte == 127){
+        Serial.print("\b \b");
+        if(inLength > 0){
+          inLength--;
+        }
+      }
       else{
         in[inLength++] = mybyte;
       }
@@ -121,10 +127,15 @@ void loop(){
       Serial.println("Transaction buffer reset");
     }
     else{
-      byte num = atoi((const char *)in);
-      Serial.print("Added to transaction:  ");
-      Serial.println(int(num));
-      transaction[transactionLength++] = num;
+      long num = atoi((const char *)in);
+      if(num > 255 || num < 0){
+        Serial.println("Too big.  Try Again.");
+      }
+      else{
+        Serial.print("Added to transaction:  ");
+        Serial.println(int(num));
+        transaction[transactionLength++] = byte(num);
+      }
     }
   }
   //debug message
