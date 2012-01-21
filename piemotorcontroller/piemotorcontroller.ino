@@ -88,14 +88,26 @@ void requestEvent();
 //called on startup
 void setup()
 {
+  //Setup Serial Port 
+  #ifdef DEBUG
+    Serial.begin(9600);
+    delay(30);
+    Serial.println("Started");
+  #endif
+  
   //Get I2C Address
   byte eeread = EEPROM.read(0);  //read from EEPROM
-  if(eeread == 255){  //will read as 255 if hasn't been set
+  Serial.print("read eeprom as:");
+  Serial.println(int(eeread));
+  if(eeread == 255 || eeread == 0){  //will read as 255 if hasn't been set
+    Serial.println("setting address for first time");
     EEPROM.write(0, I2C_ADDRESS);  //set to default if not set
   }
   else{
+    Serial.println("retreiving address from eeprom");
     I2C_ADDRESS = eeread;  //set address to value from eeprom
   }
+  reg[REG_ADDR] = I2C_ADDRESS;
   
   //Setup I2C
   Wire.begin(I2C_ADDRESS);
@@ -117,40 +129,40 @@ void setup()
   pinMode(LED_GREEN, OUTPUT);
   
   //setup registers
-  reg[REG_VER] = VERSION;
-  memcpy((void*)__DATE__, (&reg[REG_DATE]), 11);
-  memcpy((void*)__TIME__, (&reg[REG_TIME]), 8);
+  //reg[REG_VER] = VERSION;
+  //memcpy((void*)__DATE__, (&reg[REG_DATE]), 11);
+  //memcpy((void*)__TIME__, (&reg[REG_TIME]), 8);
   //(most registers should remain at their default state of 0)
   
-  enableEncoder();
+  //enableEncoder();
   
-  //Setup Serial Port 
-  #ifdef DEBUG
-    Serial.begin(9600);
-    delay(30);
-    Serial.println("Started");
-  #endif
 }
 
 //called repeatedly after startup
 void loop(){
-  if(!reg[REG_PID_EN]){ //if not PID enabled, set motors normally
+  //if(!reg[REG_PID_EN]){ //if not PID enabled, set motors normally
     //set motor direction and speed
     setMotorDir(reg[REG_DIR]);
     setMotorPWM(reg[REG_PWM]);
-  }
-  else{
+  //}
+  //else{
     //this function will se the motors using the pid
-    runPID();
-  }
+    //runPID();
+  //}
   
   //read current feedback value
   expandToLong(reg[REG_FB]) = analogRead(FB);
+  Serial.print("FEEDBACK: ");
+  Serial.println(analogRead(FB));
   
   //check if i2c address has changed
   if( reg[REG_ADDR] != I2C_ADDRESS ){
+    Serial.println("i2c changed");
     I2C_ADDRESS = reg[REG_ADDR];  //update current address
     EEPROM.write(0, I2C_ADDRESS); //write change to EEPROM
+    Wire.begin(I2C_ADDRESS);
+    Serial.print("i2c changed to ");
+    Serial.println(int(I2C_ADDRESS));
   }
   
   //start of limited sample interval section (uses LIM_INT_PD constant)
@@ -169,20 +181,20 @@ void loop(){
       Serial.print(" ");
       Serial.print(int(reg[REG_PWM]));
       Serial.print(" ");
-      Serial.println(addr);
+      Serial.print(addr);
+      Serial.print(" ");
+      Serial.println(int(I2C_ADDRESS));
     #endif
   }
 }
 
 //called when I2C data is received
 void receiveEvent(int count){
+  //Serial.println("==receiveevent==");
   //set address
   addr = Wire.read();
   //read data
-  while(Wire.available()){
-    if(addr >= BUFFER_SIZE){
-      error("addr out of range");
-    }
+  while(Wire.available() > 0){
     //write to registers
     reg[addr++] = Wire.read();
   }
@@ -197,10 +209,11 @@ void requestEvent()
 //set motor direction
 void setMotorDir(byte dir){
   //deactivate both disable pins
-  digitalWrite(D1, LOW);
-  digitalWrite(D2, HIGH);
+  //digitalWrite(D1, LOW);
+  //digitalWrite(D2, HIGH);
   //set the direction pins and LED indicators
-  if ((dir == 1) || (dir == 4)){
+  if ((dir == 1)){
+    Serial.println("fwd");
     //set direction forward
     digitalWrite(IN1, HIGH);
     digitalWrite(IN2, LOW);
@@ -208,7 +221,8 @@ void setMotorDir(byte dir){
     digitalWrite(LED_RED, LOW);
     digitalWrite(LED_GREEN, HIGH);
   }
-  else if ((dir == 0) || (dir == 3)){
+  else if ((dir == 0)){
+    Serial.println("back");
     //set direction backward
     digitalWrite(IN1, LOW);
     digitalWrite(IN2, HIGH);
@@ -217,6 +231,7 @@ void setMotorDir(byte dir){
     digitalWrite(LED_GREEN, LOW);
   }
   else if (dir == 2){
+    Serial.println("Break");
     //set braking
     digitalWrite(IN1, HIGH);
     digitalWrite(IN1, HIGH);
@@ -232,14 +247,18 @@ void setMotorDir(byte dir){
     PWMPIN = IN1;
   }
   else{
-    PWMPIN = D2;
+    PWMPIN = D1;
   }
 }
 
 //Set motor PWM value (between 0-255)
 void setMotorPWM(byte value){
   //set pwm using PWMPIN
-  analogWrite(PWMPIN, value);
+  Serial.print("               PWM: ");
+  Serial.print(int(PWMPIN));
+  Serial.print(" ");
+  Serial.println(int(value));
+  analogWrite(PWMPIN, 255-int(value));
 }
 
 //sets both LEDs on to indicate error state and delays for 500ms
