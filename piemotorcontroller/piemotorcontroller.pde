@@ -37,13 +37,13 @@ const int BUFFER_SIZE = 256;
 byte reg[BUFFER_SIZE];
 //current buffer address pointer
 int addr = 0;
-//buffer addresses
-const int REG_DIR = 0x01;
-const int REG_PWM = 0x02;
-const int REG_FBH = 0x10;
-const int REG_FBL = 0x11;
 
-const int REG_STRESS = 0xA0;
+//buffer Registers
+#define directionReg    *((byte*)(reg+0x01))
+#define pwmReg          *((byte*)(reg+0x02))
+#define feedbackReg     *((int* )(reg+0x10))
+#define encoderCountReg *((long*)(reg+0x20))
+#define stressReg       *((byte*)(reg+0xA0))
 
 //called on startup
 void setup()
@@ -58,7 +58,6 @@ void setup()
   pinMode(IN2, OUTPUT);
   pinMode(D1 , OUTPUT);
   pinMode(D2 , OUTPUT);
-  
   pinMode(EN , OUTPUT);
   digitalWrite(EN, HIGH);
   digitalWrite(D1, LOW);
@@ -76,29 +75,27 @@ void setup()
 
 //called continuously after startup
 void loop(){
-  setMotorDir(reg[REG_DIR]);
-  setMotorPWM(reg[REG_PWM]);
+  setMotorDir(directionReg);
+  setMotorPWM(pwmReg);
   
-  int fbval=analogRead(FB);
-  reg[REG_FBH] = (byte)(fbval >> 8);
-  reg[REG_FBL] = (byte)(fbval);
+  feedbackReg=analogRead(FB);
   
   //write debug data
   #ifdef DEBUG
-    Serial.print(int(reg[REG_DIR]));
+    Serial.print(int(directionReg));
     Serial.print(" ");
-    Serial.print(int(reg[REG_PWM]));
+    Serial.print(int(pwmReg));
     Serial.print(" ");
     Serial.println(addr);
   #endif
   
   #ifdef STRESS
-  if(reg[REG_STRESS]){
-    if((millis() % (reg[REG_STRESS]*10)) < (reg[REG_STRESS]*10) / 2){
-      reg[REG_DIR] = 1;
+  if(stressReg){
+    if((millis() % (stressReg*10)) < (stressReg*10) / 2){
+      directionReg= 1;
     }
     else{
-      reg[REG_DIR] = 0;
+      directionReg = 0;
     }
   }
   #endif
@@ -106,7 +103,6 @@ void loop(){
 
 //called when I2C data is received
 void receiveEvent(int count){
-  Serial.print("HELLO");
   //set address
   addr = Wire.receive();
   //read data
@@ -177,7 +173,10 @@ void error(char* message){
   //set both LEDs on
   digitalWrite(LED_RED, HIGH);
   digitalWrite(LED_GREEN, HIGH);
-  delay(500);
+  delay(250);
+  digitalWrite(LED_RED, LOW);
+  digitalWrite(LED_GREEN, LOW);
+  delay(250);
   //write debug data
   #ifdef DEBUG
     Serial.print("ERROR:  ");
