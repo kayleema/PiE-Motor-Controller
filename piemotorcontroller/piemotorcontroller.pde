@@ -11,10 +11,11 @@
 #include <Wire.h>
 
 //whether to print debug messages to serial
-#define DEBUG 1
+#define DEBUG 0
+#define STRESS 1
 
 //I2C bus address (hardcoded)
-byte I2C_ADDRESS = 0x0A;
+byte I2C_ADDRESS = 0x0B;
 
 //H-Bridge Pin Definitions
 const int IN1 =  3; //forward
@@ -22,7 +23,7 @@ const int IN2 =  5; //reverse (brakes if both IN1 and IN2 set)
 const int D1  =  6; //disable (normally low)
 const int D2  =  7; //disable (normally high)
 const int FS  = 10; //fault status (currently not used)
-const int FB  =  0; //feedback (currently not used)
+const int FB  = A0; //feedback (currently not used)
 
 const int EN  = A1; 
 
@@ -39,8 +40,10 @@ int addr = 0;
 //buffer addresses
 const int REG_DIR = 0x01;
 const int REG_PWM = 0x02;
-const int REG_FB  = 0x10;
-const int REB_FB2 = 0x11;
+const int REG_FBH = 0x10;
+const int REG_FBL = 0x11;
+
+const int REG_STRESS = 0xA0;
 
 //called on startup
 void setup()
@@ -75,6 +78,11 @@ void setup()
 void loop(){
   setMotorDir(reg[REG_DIR]);
   setMotorPWM(reg[REG_PWM]);
+  
+  int fbval=analogRead(FB);
+  reg[REG_FBH] = (byte)(fbval >> 8);
+  reg[REG_FBL] = (byte)(fbval);
+  
   //write debug data
   #ifdef DEBUG
     Serial.print(int(reg[REG_DIR]));
@@ -83,10 +91,22 @@ void loop(){
     Serial.print(" ");
     Serial.println(addr);
   #endif
+  
+  #ifdef STRESS
+  if(reg[REG_STRESS]){
+    if((millis() % (reg[REG_STRESS]*10)) < (reg[REG_STRESS]*10) / 2){
+      reg[REG_DIR] = 1;
+    }
+    else{
+      reg[REG_DIR] = 0;
+    }
+  }
+  #endif
 }
 
 //called when I2C data is received
 void receiveEvent(int count){
+  Serial.print("HELLO");
   //set address
   addr = Wire.receive();
   //read data
