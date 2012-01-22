@@ -18,7 +18,7 @@
 byte I2C_ADDRESS = 0x0B;
 
 //H-Bridge Pin Definitions
-const int IN1 =  3; //forward
+const int IN1 =  4; //forward
 const int IN2 =  5; //reverse (brakes if both IN1 and IN2 set)
 const int D1  =  6; //disable (normally low)
 const int D2  =  7; //disable (normally high)
@@ -26,6 +26,10 @@ const int FS  = 10; //fault status (currently not used)
 const int FB  = A0; //feedback (currently not used)
 
 const int EN  = A1; 
+
+//Encoders
+const int ENCA = 2;
+const int ENCB = 3;
 
 //LED Pin Definitions
 const int LED_RED   = 8;
@@ -39,11 +43,11 @@ byte reg[BUFFER_SIZE];
 int addr = 0;
 
 //buffer Registers
-#define directionReg    *((byte*)(reg+0x01))
-#define pwmReg          *((byte*)(reg+0x02))
-#define feedbackReg     *((int* )(reg+0x10))
-#define encoderCountReg *((long*)(reg+0x20))
-#define stressReg       *((byte*)(reg+0xA0))
+#define directionReg    (*((byte*)(reg+0x01)))
+#define pwmReg          (*((byte*)(reg+0x02)))
+#define feedbackReg     (*((int* )(reg+0x10)))
+#define encoderCountReg (*((long*)(reg+0x20)))
+#define stressReg       (*((byte*)(reg+0xA0)))
 
 //called on startup
 void setup()
@@ -65,6 +69,9 @@ void setup()
   
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
+  
+  attachInterrupt(0, encoderA, CHANGE);
+  attachInterrupt(1, encoderB, CHANGE);
   
   //Setup Serial Port 
   #ifdef DEBUG
@@ -183,3 +190,34 @@ void error(char* message){
     Serial.println(message);
   #endif
 }
+
+void encoderA(){
+  if(digitalRead(ENCA)){
+    if(digitalRead(ENCB))
+      encoderCountReg--;
+    else
+      encoderCountReg++;
+  }
+  else{
+    if(digitalRead(ENCB))
+      encoderCountReg++;
+    else
+      encoderCountReg--;
+  }
+}
+
+void encoderB(){
+  if(digitalRead(ENCA)){
+    if(digitalRead(ENCB))
+      encoderCountReg++;
+    else
+      encoderCountReg--;
+  }
+  else{
+    if(digitalRead(ENCB))
+      encoderCountReg--;
+    else
+      encoderCountReg++;
+  }
+}
+
