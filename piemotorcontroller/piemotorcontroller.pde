@@ -8,7 +8,9 @@
  * frequency and the direction.
  */
 
+#include "WProgram.h"
 #include <Wire.h>
+#include "nyan.h"
 
 //whether to print debug messages to serial
 #define DEBUG 0
@@ -47,7 +49,9 @@ int addr = 0;
 #define pwmReg          (*((byte*)(reg+0x02)))
 #define feedbackReg     (*((int* )(reg+0x10)))
 #define encoderCountReg (*((long*)(reg+0x20)))
+#define currentLowpass  (*((long*)(reg+0x80)))
 #define stressReg       (*((byte*)(reg+0xA0)))
+#define nyanReg         (*((byte*)(reg+0xA1)))
 
 //called on startup
 void setup()
@@ -104,6 +108,11 @@ void loop(){
     else{
       directionReg = 0;
     }
+  }
+  if(nyanReg){
+    playme(D1);
+  }
+  else{
   }
   #endif
 }
