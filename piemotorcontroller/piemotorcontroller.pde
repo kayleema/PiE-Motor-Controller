@@ -10,7 +10,6 @@
 
 #include "WProgram.h"
 #include <Wire.h>
-#include "nyan.h"
 
 //whether to print debug messages to serial
 #define DEBUG 0
@@ -52,6 +51,8 @@ int addr = 0;
 #define currentLowpass  (*((long*)(reg+0x80)))
 #define stressReg       (*((byte*)(reg+0xA0)))
 #define nyanReg         (*((byte*)(reg+0xA1)))
+
+#include "nyan.h"
 
 //called on startup
 void setup()
