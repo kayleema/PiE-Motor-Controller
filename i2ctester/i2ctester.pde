@@ -17,8 +17,12 @@
  * On a unix system with pyserial installed, the following might be useful: 
  * For Arduino Uno:  
  *    python -m serial.tools.miniterm -p "/dev/tty.usbmodem411" -e --lf
+ *     --- or ---
+ *    python -m serial.tools.miniterm -p "/dev/tty.usbmodem411" -e --lf
  * For Arduino Duemilanove:  
  *    python -m serial.tools.miniterm -p "/dev/tty.usbserial-A900cehS" -e --lf
+ * For FTDI:
+ *    python -m serial.tools.miniterm -p "/dev/cu.usbserial-FTES2FZK" -e --lf
  */
 
 #include <Wire.h>
