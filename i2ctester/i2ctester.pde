@@ -103,6 +103,32 @@ void loop(){
         Serial.println(int(Wire.receive()));
         Serial.print(">>> ");
       }
+      else if(mybyte == 'R'){
+        Serial.println();
+        Serial.print("Starting Continuous Read...");
+        Serial.print("On Register ");
+        Serial.println(int(transaction[0]));
+        while (!Serial.available()){
+          Wire.beginTransmission(I2C_ADDRESS);
+          Wire.send(byte(transaction[0]));
+          Wire.endTransmission();
+          delay(100);
+          for( int i = 0; i < transaction[1]; i++){
+            Wire.requestFrom((int)I2C_ADDRESS, 1);
+            while (Wire.available() <= 0){}
+            Serial.print(int(Wire.receive()));
+            Serial.print(' ');
+          }
+          Serial.println();
+        }
+        Serial.read();
+        //Clear buffer
+        clearnow = 1;
+        inLength = 100;
+        Serial.println();
+        Serial.println("Cleared");
+        break;
+      }
       else if(mybyte == 'c'){
         clearnow = 1;
         inLength = 100;
