@@ -65,7 +65,7 @@
 void pulse(int pin, int times);
 
 void setup() {
-  Serial.begin(19200);
+  Serial.begin(9600);
   pinMode(LED_PMODE, OUTPUT);
   pulse(LED_PMODE, 2);
   pinMode(LED_ERR, OUTPUT);
