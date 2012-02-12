@@ -16,7 +16,7 @@
 #define STRESS 1
 
 //I2C bus address (hardcoded)
-byte I2C_ADDRESS = 0x0B;
+byte I2C_ADDRESS = 0x0A;
 
 //H-Bridge Pin Definitions
 const int IN1 =  4; //forward
@@ -141,7 +141,14 @@ void requestEvent()
 //set motor direction
 //Params:
 //   byte dir:  1=fwd, 0=rev, 2=break
+byte pdir = 0;
 void setMotorDir(byte dir){
+  if(dir != pdir && pwmReg == 255){
+    //set braking
+    digitalWrite(IN1, HIGH);
+    digitalWrite(IN2, HIGH);
+    delay(250);
+  }
   //set direction
   if (dir == 1){
     //set direction forward
@@ -162,7 +169,7 @@ void setMotorDir(byte dir){
   else if (dir == 2){
     //set braking
     digitalWrite(IN1, HIGH);
-    digitalWrite(IN1, HIGH);
+    digitalWrite(IN2, HIGH);
     //set LEDs OFF
     digitalWrite(LED_RED, LOW);
     digitalWrite(LED_GREEN, LOW);
@@ -176,6 +183,7 @@ void setMotorDir(byte dir){
   else{
     error("Unrecognized direction");
   }
+  pdir = dir;
 }
 
 //Set motor PWM value (between 0-255)
