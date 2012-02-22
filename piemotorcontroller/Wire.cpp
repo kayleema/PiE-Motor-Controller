@@ -21,8 +21,8 @@ extern "C" {
   #include <stdlib.h>
   #include <string.h>
   #include <inttypes.h>
-  #include "twi.h"
 }
+#include "twi.h"
 
 #include "Wire.h"
 
