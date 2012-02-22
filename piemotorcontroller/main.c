@@ -11,6 +11,8 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
+#include "Wire.h"
+
 //I2C bus address (hardcoded)
 uint8_t I2C_ADDRESS = 0x0B;
 
@@ -70,6 +72,12 @@ void motorSetup()
   // Set FS pin as input, pull up enabled
   DDRB &= ~(1 << FS);
   PORTB |= (1 << FS);
+
+  // Set up motor pwm (Timer 0)
+  // Set Timer 0 to phase-correct PWM, output on OC0A
+  TCCR0A |= (1 << WGM00) | (1 << COM0A1);
+  // Set clock source to F_CPU/8
+  TCCR0B |= (1 << CS01);
 }
 
 //called on startup
@@ -81,6 +89,7 @@ void setup()
   Wire.onRequest(requestEvent);
   
   //Setup Digital IO Pin directions
+  motorSetup();
   
   setupLEDs();
   
@@ -163,9 +172,9 @@ void setMotorDir(byte dir){
 }
 
 //Set motor PWM value (between 0-255)
-void setMotorPWM(byte value){
+void setMotorPWM(unsigned char value){
   //set pwm
-  analogWrite(D1, 255 - value);
+  OCR0A = value;
 }
 
 void encoderA(){
