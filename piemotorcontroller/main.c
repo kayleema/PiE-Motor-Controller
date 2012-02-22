@@ -8,11 +8,11 @@
  * frequency and the direction.
  */
 
+#include <inttypes.h>
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
-#include "Wire.h"
-
 #include "Wire.h"
 
 //I2C bus address (hardcoded)
@@ -37,9 +37,9 @@ const uint8_t LED_RED   = PB0;
 const uint8_t LED_GREEN = PB1;
 
 //buffer size
-const uint8_t BUFFER_SIZE = 255;
+//const uint8_t BUFFER_SIZE = 255;
 //Buffer
-uint8_t reg[BUFFER_SIZE];
+uint8_t reg[256];
 //current buffer address pointer
 uint8_t addr = 0;
 
@@ -60,6 +60,7 @@ void setup();
 void loop();
 void receiveEvent(int count);
 void requestEvent();
+void motorSetup();
 void setMotorDir(uint8_t dir);
 void setMotorPWM(uint8_t value);
 
@@ -95,9 +96,9 @@ int main(void)
 void setup()
 {
   //Setup I2C
-  Wire.begin(I2C_ADDRESS);
-  Wire.onReceive(receiveEvent);
-  Wire.onRequest(requestEvent);
+  begin(I2C_ADDRESS);
+  onReceive(receiveEvent);
+  onRequest(requestEvent);
   
   //Setup Digital IO Pin directions
   motorSetup();
@@ -114,7 +115,7 @@ void loop(){
   setMotorPWM(pwmReg);
   
   //feedbackReg=analogRead(FB);
-  
+
   while(stressReg){
   	//TODO: Make Variable
   	setMotorDir(1);
@@ -130,18 +131,18 @@ void loop(){
 //called when I2C data is received
 void receiveEvent(int count){
   //set address
-  addr = Wire.receive();
+  addr = receive();
   //read data
-  while(Wire.available()){
+  while(available()){
     //write to register
-    reg[addr++] = Wire.receive();
+    reg[addr++] = receive();
   }
 }
 
 //called when I2C data is reqested
 void requestEvent()
 {
-  Wire.send(reg[addr++]);
+  send(reg[addr++]);
 }
 
 //set motor direction

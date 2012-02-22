@@ -10,15 +10,12 @@ FUSES      = -U lfuse:w:0xFF:m
 # Tune the lines below only if you know what you are doing:
 
 AVRDUDE = avrdude $(PROGRAMMER_FLAGS)
-COMPILE = avr-g++ -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
+COMPILE = avr-gcc -std=c99 -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
 
 # symbolic targets:
 all:	main.hex
 
 .c.o:
-	$(COMPILE) -c $< -o $@
-	
-.cpp.o:
 	$(COMPILE) -c $< -o $@
 
 .S.o:
