@@ -8,51 +8,52 @@
  * frequency and the direction.
  */
 
-#include "WProgram.h"
-#include <Wire.h>
-
-//whether to print debug messages to serial
-#define DEBUG 0
-#define STRESS 1
-
 //I2C bus address (hardcoded)
-byte I2C_ADDRESS = 0x0B;
+uint8_t I2C_ADDRESS = 0x0B;
 
 //H-Bridge Pin Definitions
-const int IN1 =  4; //forward
-const int IN2 =  5; //reverse (brakes if both IN1 and IN2 set)
-const int D1  =  6; //disable (normally low)
-const int D2  =  7; //disable (normally high)
-const int FS  = 10; //fault status (currently not used)
-const int FB  = A0; //feedback (currently not used)
+const uint8_t IN1 =  4; //forward
+const uint8_t IN2 =  5; //reverse (brakes if both IN1 and IN2 set)
+const uint8_t D1  =  6; //disable (normally low)
+const uint8_t D2  =  7; //disable (normally high)
+const uint8_t FS  = 10; //fault status (currently not used)
+const uint8_t FB  = A0; //feedback (currently not used)
 
-const int EN  = A1; 
+const uint8_t EN  = A1; 
 
 //Encoders
-const int ENCA = 2;
-const int ENCB = 3;
+const uint8_t ENCA = 2;
+const uint8_t ENCB = 3;
 
 //LED Pin Definitions
-const int LED_RED   = 8;
-const int LED_GREEN = 9;
+const uint8_t LED_RED   = 8;
+const uint8_t LED_GREEN = 9;
 
 //buffer size
-const int BUFFER_SIZE = 256;
+const uint8_t BUFFER_SIZE = 256;
 //Buffer
-byte reg[BUFFER_SIZE];
+uint8_t reg[BUFFER_SIZE];
 //current buffer address pointer
-int addr = 0;
+uint8_t addr = 0;
 
-//buffer Registers
-#define directionReg    (*((byte*)(reg+0x01)))
-#define pwmReg          (*((byte*)(reg+0x02)))
+//////////// LED DEFINITIONS /////////////
+void setupLEDs(){
+	DDRB |= _BV(1) | _BV(0); //set pins as output for LEDs
+}
+void setGreenLED()  {PORTB |=  _BV(PORTB1);}
+void setRedLED()    {PORTB |=  _BV(PORTB0);}
+void clrGreenLED()  {PORTB &= ~_BV(PORTB1);}
+void clrRedLED()    {PORTB &= ~_BV(PORTB0);}
+
+/////////// Register Definitions ///////////
+#define directionReg    (*((uint8_t*)(reg+0x01)))
+#define pwmReg          (*((uint8_t*)(reg+0x02)))
 #define feedbackReg     (*((int* )(reg+0x10)))
 #define encoderCountReg (*((long*)(reg+0x20)))
 #define currentLowpass  (*((long*)(reg+0x80)))
 #define stressReg       (*((byte*)(reg+0xA0)))
 #define nyanReg         (*((byte*)(reg+0xA1)))
 
-#include "nyan.h"
 
 //called on startup
 void setup()
@@ -62,27 +63,12 @@ void setup()
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
   
-  //Setup Digital IO Pins
-  pinMode(IN1, OUTPUT);
-  pinMode(IN2, OUTPUT);
-  pinMode(D1 , OUTPUT);
-  pinMode(D2 , OUTPUT);
-  pinMode(EN , OUTPUT);
-  digitalWrite(EN, HIGH);
-  digitalWrite(D1, LOW);
-  digitalWrite(D2, HIGH);
+  //Setup Digital IO Pin directions
   
-  pinMode(LED_RED, OUTPUT);
-  pinMode(LED_GREEN, OUTPUT);
+  setupLEDs();
   
-  attachInterrupt(0, encoderA, CHANGE);
-  attachInterrupt(1, encoderB, CHANGE);
-  
-  //Setup Serial Port 
-  #ifdef DEBUG
-    Serial.begin(9600);
-    delay(30);
-  #endif
+  //attachInterrupt(0, encoderA, CHANGE);
+  //attachInterrupt(1, encoderB, CHANGE);
 }
 
 //called continuously after startup
@@ -90,32 +76,16 @@ void loop(){
   setMotorDir(directionReg);
   setMotorPWM(pwmReg);
   
-  feedbackReg=analogRead(FB);
+  //feedbackReg=analogRead(FB);
   
-  //write debug data
-  #ifdef DEBUG
-    Serial.print(int(directionReg));
-    Serial.print(" ");
-    Serial.print(int(pwmReg));
-    Serial.print(" ");
-    Serial.println(addr);
-  #endif
-  
-  #ifdef STRESS
-  if(stressReg){
-    if((millis() % (stressReg*10)) < (stressReg*10) / 2){
-      directionReg= 1;
-    }
-    else{
-      directionReg = 0;
-    }
+  while(stressReg){
+  	setMotorDir(1);
+  	setMotorPWM(pwmReg);
+  	_delay_ms(stressReg*10);
+  	setMotorDir(0);
+  	setMotorPWM(pwmReg);
+  	_delay_ms(stressReg*10);
   }
-  if(nyanReg){
-    playme(D1);
-  }
-  else{
-  }
-  #endif
 }
 
 //called when I2C data is received
