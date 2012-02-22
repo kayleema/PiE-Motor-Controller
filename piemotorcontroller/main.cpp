@@ -13,8 +13,6 @@
 #include <util/delay.h>
 #include "Wire.h"
 
-#include "Wire.h"
-
 //I2C bus address (hardcoded)
 uint8_t I2C_ADDRESS = 0x0B;
 
