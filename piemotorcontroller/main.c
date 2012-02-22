@@ -138,13 +138,10 @@ void setMotorDir(byte dir){
     digitalWrite(LED_GREEN, LOW);
   }
   else if (dir == 3){
-    error("break/rev not implemented");
   }
   else if (dir == 4){
-    error("break/fwd not implemented");
   }
   else{
-    error("Unrecognized direction");
   }
 }
 
@@ -152,23 +149,6 @@ void setMotorDir(byte dir){
 void setMotorPWM(byte value){
   //set pwm
   analogWrite(D1, 255 - value);
-}
-
-//sets both LEDs on to indicate error state and delays for 500ms
-//also writes the message to serial if debugging enabled
-void error(char* message){
-  //set both LEDs on
-  digitalWrite(LED_RED, HIGH);
-  digitalWrite(LED_GREEN, HIGH);
-  delay(250);
-  digitalWrite(LED_RED, LOW);
-  digitalWrite(LED_GREEN, LOW);
-  delay(250);
-  //write debug data
-  #ifdef DEBUG
-    Serial.print("ERROR:  ");
-    Serial.println(message);
-  #endif
 }
 
 void encoderA(){
