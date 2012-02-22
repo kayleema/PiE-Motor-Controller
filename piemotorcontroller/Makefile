@@ -1,7 +1,7 @@
 # Compilation Settings
 DEVICE     = atmega328
 CLOCK      = 16000000
-OBJECTS    = main.o twi.o Wire.o
+OBJECTS    = main.o twi.o
 
 # Code Upload Settings
 PROGRAMMER_FLAGS = -c usbtiny -p m328p -F 
