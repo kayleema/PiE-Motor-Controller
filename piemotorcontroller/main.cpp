@@ -10,6 +10,8 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <util/delay.h>
+#include "Wire.h"
 
 //I2C bus address (hardcoded)
 uint8_t I2C_ADDRESS = 0x0B;
@@ -54,6 +56,10 @@ void setupLEDs(){
 
 void setup();
 void loop();
+void receiveEvent(int count);
+void requestEvent();
+void setMotorDir(uint8_t dir);
+void setMotorPWM(uint8_t value);
 
 void motorSetup()
 {
@@ -118,10 +124,7 @@ void receiveEvent(int count){
   addr = Wire.receive();
   //read data
   while(Wire.available()){
-    if(addr >= BUFFER_SIZE){
-      error("addr out of range");
-    }
-    //write to registers
+    //write to register
     reg[addr++] = Wire.receive();
   }
 }
@@ -135,7 +138,7 @@ void requestEvent()
 //set motor direction
 //Params:
 //   byte dir:  1=fwd, 0=rev, 2=break
-void setMotorDir(byte dir){
+void setMotorDir(uint8_t dir){
   //set direction
   if (dir == 1){
     //set direction forward
@@ -179,7 +182,7 @@ void setMotorDir(byte dir){
 }
 
 //Set motor PWM value (between 0-255)
-void setMotorPWM(byte value){
+void setMotorPWM(uint8_t value){
   //set pwm
   //analogWrite(D1, 255 - value);
 }
