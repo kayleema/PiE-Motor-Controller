@@ -1,7 +1,7 @@
 # Compilation Settings
 DEVICE     = atmega328
 CLOCK      = 16000000
-OBJECTS    = blink.o
+OBJECTS    = main.o
 
 # Code Upload Settings
 PROGRAMMER_FLAGS = -c usbtiny -p m328p -F 
