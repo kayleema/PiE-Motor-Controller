@@ -8,26 +8,29 @@
  * frequency and the direction.
  */
 
+#include <avr/io.h>
+#include <avr/interrupt.h>
+
 //I2C bus address (hardcoded)
 uint8_t I2C_ADDRESS = 0x0B;
 
 //H-Bridge Pin Definitions
-const uint8_t IN1 =  4; //forward
-const uint8_t IN2 =  5; //reverse (brakes if both IN1 and IN2 set)
-const uint8_t D1  =  6; //disable (normally low)
-const uint8_t D2  =  7; //disable (normally high)
-const uint8_t FS  = 10; //fault status (currently not used)
-const uint8_t FB  = A0; //feedback (currently not used)
+const uint8_t IN1 =  PD4; //forward
+const uint8_t IN2 =  PD5; //reverse (brakes if both IN1 and IN2 set)
+const uint8_t D1  =  PD6; //disable (normally low)
+const uint8_t D2  =  PD7; //disable (normally high)
+const uint8_t FS  = PB2; //fault status (currently not used)
+const uint8_t FB  = PC0; //feedback (also ADC0)
 
-const uint8_t EN  = A1; 
+const uint8_t EN  = PC1;
 
 //Encoders
-const uint8_t ENCA = 2;
-const uint8_t ENCB = 3;
+const uint8_t ENCA = PD2;
+const uint8_t ENCB = PD3;
 
 //LED Pin Definitions
-const uint8_t LED_RED   = 8;
-const uint8_t LED_GREEN = 9;
+const uint8_t LED_RED   = PB0;
+const uint8_t LED_GREEN = PB1;
 
 //buffer size
 const uint8_t BUFFER_SIZE = 256;
@@ -54,6 +57,20 @@ void clrRedLED()    {PORTB &= ~_BV(PORTB0);}
 #define stressReg       (*((byte*)(reg+0xA0)))
 #define nyanReg         (*((byte*)(reg+0xA1)))
 
+
+void motorSetup()
+{
+  // Set I/O Pins
+
+  // Set IN1, IN2, D1, D2 as outputs
+  DDRD |= (1 << IN1) | (1 << IN2) | (1 << D1) | (1 << D2);
+  // Set EN as output
+  DDRC |= (1 << EN);
+
+  // Set FS pin as input, pull up enabled
+  DDRB &= ~(1 << FS);
+  PORTB |= (1 << FS);
+}
 
 //called on startup
 void setup()
