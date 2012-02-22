@@ -18,7 +18,8 @@
  * For Arduino Uno:  
  *    python -m serial.tools.miniterm -p "/dev/tty.usbmodem411" -e --lf
  *     --- or ---
- *    python -m serial.tools.miniterm -p "/dev/tty.usbmodem411" -e --lf
+ *    python -m serial.tools.miniterm -p "/dev/tty.usbmodem###" -e --lf
+ *          (for some ###)
  * For Arduino Duemilanove:  
  *    python -m serial.tools.miniterm -p "/dev/tty.usbserial-A900cehS" -e --lf
  * For FTDI:
