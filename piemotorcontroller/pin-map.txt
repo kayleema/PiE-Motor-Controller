@@ -1,0 +1,19 @@
+PiE Motor Controller pin mapping
+hardware version 0.3 (Feb 2012)
+
+MC33887 H-bridge pins
+IN1	PD4		Forward
+IN2	PD5	OC0B	Reverse
+D1	PD6	OC0A	Disable (normally low)
+D2	PD7	 	Disable (normally high)
+FS	PB2	PCINT2	Fault status (currently not used)
+FB	PC0	ADC0	Feedback
+EN	PC1		Enable
+
+Encoder pins
+ENCA	PD2	INT0	Quadrature encoder input A
+ENCB	PD3	INT1	Quadrature encoder input B
+
+LED pins
+LED_RED		PB0
+LED_GREEN	PB1	OC1A
