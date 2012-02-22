@@ -19,8 +19,8 @@ const uint8_t IN1 =  PD4; //forward
 const uint8_t IN2 =  PD5; //reverse (brakes if both IN1 and IN2 set)
 const uint8_t D1  =  PD6; //disable (normally low)
 const uint8_t D2  =  PD7; //disable (normally high)
-const uint8_t FS  = PB2; //fault status (currently not used)
-const uint8_t FB  = PC0; //feedback (also ADC0)
+const uint8_t FS  =  PB2; //fault status (currently not used)
+const uint8_t FB  =  PC0; //feedback (also ADC0)
 
 const uint8_t EN  = PC1;
 
@@ -33,7 +33,7 @@ const uint8_t LED_RED   = PB0;
 const uint8_t LED_GREEN = PB1;
 
 //buffer size
-const uint8_t BUFFER_SIZE = 256;
+const uint8_t BUFFER_SIZE = 255;
 //Buffer
 uint8_t reg[BUFFER_SIZE];
 //current buffer address pointer
@@ -43,20 +43,17 @@ uint8_t addr = 0;
 void setupLEDs(){
 	DDRB |= _BV(1) | _BV(0); //set pins as output for LEDs
 }
-void setGreenLED()  {PORTB |=  _BV(PORTB1);}
-void setRedLED()    {PORTB |=  _BV(PORTB0);}
-void clrGreenLED()  {PORTB &= ~_BV(PORTB1);}
-void clrRedLED()    {PORTB &= ~_BV(PORTB0);}
 
 /////////// Register Definitions ///////////
-#define directionReg    (*((uint8_t*)(reg+0x01)))
-#define pwmReg          (*((uint8_t*)(reg+0x02)))
-#define feedbackReg     (*((int* )(reg+0x10)))
-#define encoderCountReg (*((long*)(reg+0x20)))
-#define currentLowpass  (*((long*)(reg+0x80)))
-#define stressReg       (*((byte*)(reg+0xA0)))
-#define nyanReg         (*((byte*)(reg+0xA1)))
+#define directionReg    (*((uint8_t *)(reg+0x01)))
+#define pwmReg          (*((uint8_t *)(reg+0x02)))
+#define feedbackReg     (*((uint16_t*)(reg+0x10)))
+#define encoderCountReg (*((int32_t *)(reg+0x20)))
+#define stressReg       (*((uint8_t *)(reg+0xA0)))
+#define nyanReg         (*((uint8_t *)(reg+0xA1)))
 
+void setup();
+void loop();
 
 void motorSetup()
 {
@@ -70,6 +67,14 @@ void motorSetup()
   // Set FS pin as input, pull up enabled
   DDRB &= ~(1 << FS);
   PORTB |= (1 << FS);
+}
+
+int main(void)
+{
+	setup();
+	for(;;){
+ 		loop();
+	}
 }
 
 //called on startup
@@ -96,12 +101,14 @@ void loop(){
   //feedbackReg=analogRead(FB);
   
   while(stressReg){
+  	//TODO: Make Variable
   	setMotorDir(1);
   	setMotorPWM(pwmReg);
-  	_delay_ms(stressReg*10);
+  	_delay_ms(1000);
+  	
   	setMotorDir(0);
   	setMotorPWM(pwmReg);
-  	_delay_ms(stressReg*10);
+  	_delay_ms(1000);
   }
 }
 
@@ -132,44 +139,53 @@ void setMotorDir(byte dir){
   //set direction
   if (dir == 1){
     //set direction forward
-    digitalWrite(IN1, HIGH);
-    digitalWrite(IN2, LOW);
+    //digitalWrite(IN1, HIGH);
+    PORTD |=  (1<<IN1);
+    //digitalWrite(IN2, LOW);
+    PORTD &= ~(1<<IN2);
+    
     //set LED Green
-    digitalWrite(LED_RED, LOW);
-    digitalWrite(LED_GREEN, HIGH);
+    //digitalWrite(LED_RED, LOW);
+    PORTB &= ~(1<<LED_RED);
+    //digitalWrite(LED_GREEN, HIGH);
+    PORTB |=  (1<<LED_GREEN);
   }
   else if (dir == 0){
     //set direction backward
-    digitalWrite(IN1, LOW);
-    digitalWrite(IN2, HIGH);
+    //digitalWrite(IN1, LOW);
+    PORTD &= ~(1<<IN1);
+    //digitalWrite(IN2, HIGH);
+    PORTD |=  (1<<IN2);
+    
     //set LED RED
-    digitalWrite(LED_RED, HIGH);
-    digitalWrite(LED_GREEN, LOW);
+    //digitalWrite(LED_RED, HIGH);
+    PORTB |=  (1<<LED_RED);
+    //digitalWrite(LED_GREEN, LOW);
+    PORTB &= ~(1<<LED_GREEN);
   }
   else if (dir == 2){
     //set braking
-    digitalWrite(IN1, HIGH);
-    digitalWrite(IN1, HIGH);
+    //digitalWrite(IN1, HIGH);
+    PORTD |=  (1<<IN1);
+    //digitalWrite(IN1, HIGH);
+    PORTD |=  (1<<IN2);
+    
     //set LEDs OFF
-    digitalWrite(LED_RED, LOW);
-    digitalWrite(LED_GREEN, LOW);
-  }
-  else if (dir == 3){
-  }
-  else if (dir == 4){
-  }
-  else{
+    //digitalWrite(LED_RED, LOW);
+    PORTB &= ~(1<<LED_RED);
+    //digitalWrite(LED_GREEN, LOW);
+    PORTB &= ~(1<<LED_GREEN);
   }
 }
 
 //Set motor PWM value (between 0-255)
 void setMotorPWM(byte value){
   //set pwm
-  analogWrite(D1, 255 - value);
+  //analogWrite(D1, 255 - value);
 }
 
 void encoderA(){
-  if(digitalRead(ENCA)){
+  /*if(digitalRead(ENCA)){
     if(digitalRead(ENCB))
       encoderCountReg--;
     else
@@ -180,11 +196,11 @@ void encoderA(){
       encoderCountReg++;
     else
       encoderCountReg--;
-  }
+  }*/
 }
 
 void encoderB(){
-  if(digitalRead(ENCA)){
+  /*if(digitalRead(ENCA)){
     if(digitalRead(ENCB))
       encoderCountReg++;
     else
@@ -195,6 +211,6 @@ void encoderB(){
       encoderCountReg--;
     else
       encoderCountReg++;
-  }
+  }*/
 }
 
