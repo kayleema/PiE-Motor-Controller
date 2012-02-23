@@ -84,8 +84,16 @@ void motorSetup()
   TCCR0B |= (1 << CS01);
 }
 
+void setupEncoder(){
+  EICRA = 0x0A;
+  EIMSK = 0x03;
+  //fix this!!!!!!!!
+  sei();
+}
+
 int main(void)
 {
+	encoderCountReg = 5;
 	sei();
 	setup();
 	for(;;){
@@ -106,8 +114,7 @@ void setup()
   
   setupLEDs();
   
-  //attachInterrupt(0, encoderA, CHANGE);
-  //attachInterrupt(1, encoderB, CHANGE);
+  setupEncoder();
 }
 
 //called continuously after startup
@@ -185,33 +192,36 @@ void setMotorPWM(uint8_t value){
   OCR0A = 255-value;
 }
 
-void encoderA(){
-  /*if(digitalRead(ENCA)){
-    if(digitalRead(ENCB))
+//Encoder A Interrupt
+ISR(INT0_vect)
+{
+  if( PORTD & (1<<ENCA) ){
+    if( PORTD & (1<<ENCB) )
       encoderCountReg--;
     else
       encoderCountReg++;
   }
   else{
-    if(digitalRead(ENCB))
+    if( PORTD & (1<<ENCB) )
       encoderCountReg++;
     else
       encoderCountReg--;
-  }*/
+  }
 }
 
-void encoderB(){
-  /*if(digitalRead(ENCA)){
-    if(digitalRead(ENCB))
+ISR(INT1_vect)
+{
+  if( PORTD & (1<<ENCA) ){
+    if( PORTD & (1<<ENCB) )
       encoderCountReg++;
     else
       encoderCountReg--;
   }
   else{
-    if(digitalRead(ENCB))
+    if( PORTD & (1<<ENCB) )
       encoderCountReg--;
     else
       encoderCountReg++;
-  }*/
+  }
 }
 
