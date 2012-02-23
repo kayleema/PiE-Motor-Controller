@@ -118,14 +118,13 @@ void loop(){
   //feedbackReg=analogRead(FB);
   
   while(stressReg){
-  	//TODO: Make Variable
   	setMotorDir(1);
   	setMotorPWM(pwmReg);
-  	_delay_ms(1000);
+  	_delay_ms(stressReg*10);
   	
   	setMotorDir(0);
   	setMotorPWM(pwmReg);
-  	_delay_ms(1000);
+  	_delay_ms(stressReg*10);
   }
 }
 
@@ -153,41 +152,29 @@ void setMotorDir(uint8_t dir){
   //set direction
   if (dir == 1){
     //set direction forward
-    //digitalWrite(IN1, HIGH);
     PORTD |=  (1<<IN1);
-    //digitalWrite(IN2, LOW);
     PORTD &= ~(1<<IN2);
     
     //set LED Green
-    //digitalWrite(LED_RED, LOW);
     PORTB &= ~(1<<LED_RED);
-    //digitalWrite(LED_GREEN, HIGH);
     PORTB |=  (1<<LED_GREEN);
   }
   else if (dir == 0){
     //set direction backward
-    //digitalWrite(IN1, LOW);
     PORTD &= ~(1<<IN1);
-    //digitalWrite(IN2, HIGH);
     PORTD |=  (1<<IN2);
     
     //set LED RED
-    //digitalWrite(LED_RED, HIGH);
     PORTB |=  (1<<LED_RED);
-    //digitalWrite(LED_GREEN, LOW);
     PORTB &= ~(1<<LED_GREEN);
   }
   else if (dir == 2){
     //set braking
-    //digitalWrite(IN1, HIGH);
     PORTD |=  (1<<IN1);
-    //digitalWrite(IN1, HIGH);
     PORTD |=  (1<<IN2);
     
     //set LEDs OFF
-    //digitalWrite(LED_RED, LOW);
     PORTB &= ~(1<<LED_RED);
-    //digitalWrite(LED_GREEN, LOW);
     PORTB &= ~(1<<LED_GREEN);
   }
 }
