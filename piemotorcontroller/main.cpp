@@ -13,26 +13,22 @@
 #include <util/delay.h>
 #include "Wire.h"
 
-#include "Wire.h"
-
 //I2C bus address (hardcoded)
 uint8_t I2C_ADDRESS = 0x0B;
 
-//H-Bridge Pin Definitions
+/** Pin Definitions **/
+//H-Bridge
 const uint8_t IN1 =  PD4; //forward
 const uint8_t IN2 =  PD5; //reverse (brakes if both IN1 and IN2 set)
 const uint8_t D1  =  PD6; //disable (normally low)
 const uint8_t D2  =  PD7; //disable (normally high)
 const uint8_t FS  =  PB2; //fault status (currently not used)
 const uint8_t FB  =  PC0; //feedback (also ADC0)
-
 const uint8_t EN  = PC1;
-
 //Encoders
 const uint8_t ENCA = PD2;
 const uint8_t ENCB = PD3;
-
-//LED Pin Definitions
+//LEDs
 const uint8_t LED_RED   = PB0;
 const uint8_t LED_GREEN = PB1;
 
@@ -71,6 +67,11 @@ void motorSetup()
   DDRD |= (1 << IN1) | (1 << IN2) | (1 << D1) | (1 << D2);
   // Set EN as output
   DDRC |= (1 << EN);
+  
+  //Set EN
+  PORTC |= (1 << EN);
+  //Set D2
+  PORTD |= (1 << D2);
 
   // Set FS pin as input, pull up enabled
   DDRB &= ~(1 << FS);
@@ -194,7 +195,7 @@ void setMotorDir(uint8_t dir){
 //Set motor PWM value (between 0-255)
 void setMotorPWM(uint8_t value){
   //set pwm
-  OCR0A = value;
+  OCR0A = 255-value;
 }
 
 void encoderA(){
