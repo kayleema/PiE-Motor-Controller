@@ -64,10 +64,17 @@ void twi_init(void)
   // initialize state
   twi_state = TWI_READY;
 
-  // activate internal pull-ups for twi
-  // as per note from atmega8 manual pg167
-  sbi(PORTC, 4);
-  sbi(PORTC, 5);
+  #if defined(__AVR_ATmega168__) || defined(__AVR_ATmega8__) || defined(__AVR_ATmega328P__)
+    // activate internal pull-ups for twi
+    // as per note from atmega8 manual pg167
+    sbi(PORTC, 4);
+    sbi(PORTC, 5);
+  #else
+    // activate internal pull-ups for twi
+    // as per note from atmega128 manual pg204
+    sbi(PORTD, 0);
+    sbi(PORTD, 1);
+  #endif
 
   // initialize twi prescaler and bit rate
   cbi(TWSR, TWPS0);
@@ -322,7 +329,7 @@ void twi_releaseBus(void)
   twi_state = TWI_READY;
 }
 
-ISR(TWI_vect)
+SIGNAL(TWI_vect)
 {
   switch(TW_STATUS){
     // All Master
