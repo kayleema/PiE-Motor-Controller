@@ -85,6 +85,7 @@ void motorSetup()
 
 int main(void)
 {
+	sei();
 	setup();
 	for(;;){
  		loop();

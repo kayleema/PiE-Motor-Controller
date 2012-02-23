@@ -1,7 +1,7 @@
 # Compilation Settings
 DEVICE     = atmega328
 CLOCK      = 16000000
-OBJECTS    = main.o twi.o
+OBJECTS    = main.o twi.o Wire.o
 
 # Code Upload Settings
 PROGRAMMER_FLAGS = -c usbtiny -p m328p -F 
@@ -10,13 +10,14 @@ FUSES      = -U lfuse:w:0xFF:m
 # Tune the lines below only if you know what you are doing:
 
 AVRDUDE = avrdude $(PROGRAMMER_FLAGS)
-COMPILE = avr-g++ -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
+COMPILE  = avr-g++ -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
+COMPILEC = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
 
 # symbolic targets:
 all:	main.hex
 
 .c.o:
-	$(COMPILE) -c $< -o $@
+	$(COMPILEC) -c $< -o $@
 	
 .cpp.o:
 	$(COMPILE) -c $< -o $@
