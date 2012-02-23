@@ -58,6 +58,7 @@ void receiveEvent(int count);
 void requestEvent();
 void setMotorDir(uint8_t dir);
 void setMotorPWM(uint8_t value);
+uint16_t readFeedback();
 
 void motorSetup()
 {
@@ -122,7 +123,8 @@ void loop(){
   setMotorDir(directionReg);
   setMotorPWM(pwmReg);
   
-  //feedbackReg=analogRead(FB);
+  //TODO: Uncomment Me!
+  //feedbackReg=readFeedback();
   
   while(stressReg){
   	setMotorDir(1);
@@ -225,3 +227,11 @@ ISR(INT1_vect)
   }
 }
 
+uint16_t readFeedback(){
+    ADMUX = 0xC0;
+    ADCSRA = 0xC0;
+    while( ~(ADCSRA & (1<<ADIF)) ){
+        //wait for ADC Result
+    }
+    return (uint16_t)(ADCH<<8) & ADCL;
+}
