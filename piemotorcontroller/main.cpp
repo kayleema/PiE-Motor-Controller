@@ -13,6 +13,8 @@
 #include <util/delay.h>
 #include "Wire.h"
 
+#define ENABLE_LEDS
+
 //I2C bus address (hardcoded)
 uint8_t I2C_ADDRESS = 0x0B;
 
@@ -24,7 +26,7 @@ const uint8_t D1  =  PD6; //disable (normally low)
 const uint8_t D2  =  PD7; //disable (normally high)
 const uint8_t FS  =  PB2; //fault status (currently not used)
 const uint8_t FB  =  PC0; //feedback (also ADC0)
-const uint8_t EN  = PC1;
+const uint8_t EN  =  PC1;
 //Encoders
 const uint8_t ENCA = PD2;
 const uint8_t ENCB = PD3;
@@ -86,15 +88,16 @@ void motorSetup()
 }
 
 void setupEncoder(){
-  EICRA = 0x0A;
+  EICRA = 0x05;
   EIMSK = 0x03;
-  //fix this!!!!!!!!
+  //DDRD &= ~( (1 << ENCA) & (1 << ENCB) );
   sei();
 }
 
 int main(void)
 {
 	encoderCountReg = 5;
+	feedbackReg = 5;
 	sei();
 	setup();
 	for(;;){
@@ -123,8 +126,7 @@ void loop(){
   setMotorDir(directionReg);
   setMotorPWM(pwmReg);
   
-  //TODO: Uncomment Me!
-  //feedbackReg=readFeedback();
+  feedbackReg=readFeedback();
   
   while(stressReg){
   	setMotorDir(1);
@@ -135,6 +137,8 @@ void loop(){
   	setMotorPWM(pwmReg);
   	_delay_ms(stressReg*10);
   }
+  
+  
 }
 
 //called when I2C data is received
@@ -165,8 +169,10 @@ void setMotorDir(uint8_t dir){
     PORTD &= ~(1<<IN2);
     
     //set LED Green
+    #ifdef ENABLE_LEDS
     PORTB &= ~(1<<LED_RED);
     PORTB |=  (1<<LED_GREEN);
+    #endif
   }
   else if (dir == 0){
     //set direction backward
@@ -174,8 +180,10 @@ void setMotorDir(uint8_t dir){
     PORTD |=  (1<<IN2);
     
     //set LED RED
+    #ifdef ENABLE_LEDS
     PORTB |=  (1<<LED_RED);
     PORTB &= ~(1<<LED_GREEN);
+    #endif
   }
   else if (dir == 2){
     //set braking
@@ -183,8 +191,10 @@ void setMotorDir(uint8_t dir){
     PORTD |=  (1<<IN2);
     
     //set LEDs OFF
+    #ifdef ENABLE_LEDS
     PORTB &= ~(1<<LED_RED);
     PORTB &= ~(1<<LED_GREEN);
+    #endif
   }
 }
 
@@ -197,30 +207,34 @@ void setMotorPWM(uint8_t value){
 //Encoder A Interrupt
 ISR(INT0_vect)
 {
-  if( PORTD & (1<<ENCA) ){
-    if( PORTD & (1<<ENCB) )
+  if( PIND & (1<<ENCA) ){
+    if( PIND & (1<<ENCB) ){
       encoderCountReg--;
-    else
+    }
+    else{
       encoderCountReg++;
+    }
   }
   else{
-    if( PORTD & (1<<ENCB) )
+    if( PIND & (1<<ENCB) || 1 ){
       encoderCountReg++;
-    else
+    }
+    else{
       encoderCountReg--;
+    }
   }
 }
 
 ISR(INT1_vect)
 {
-  if( PORTD & (1<<ENCA) ){
-    if( PORTD & (1<<ENCB) )
+  if( PIND & (1<<ENCA) ){
+    if( PIND & (1<<ENCB) )
       encoderCountReg++;
     else
       encoderCountReg--;
   }
   else{
-    if( PORTD & (1<<ENCB) )
+    if( PIND & (1<<ENCB) )
       encoderCountReg--;
     else
       encoderCountReg++;
@@ -228,10 +242,15 @@ ISR(INT1_vect)
 }
 
 uint16_t readFeedback(){
-    ADMUX = 0xC0;
-    ADCSRA = 0xC0;
-    while( ~(ADCSRA & (1<<ADIF)) ){
+    PRR &= ~(1<<PRADC);
+    ADCSRB = 0x00;
+    ADMUX = 0x00;//select pin 0 and set reference to AREF    
+    ADCSRA = 0x80;//enable adc (ADCEN)
+    ADCSRA |= 1<<ADSC;//start conversion
+    while( ADCSRA & (1<<ADSC) ){
         //wait for ADC Result
     }
-    return (uint16_t)(ADCH<<8) & ADCL;
+    uint8_t lowbyte = ADCL;
+    uint8_t highbyte = ADCH & 0x03;
+    return lowbyte | ((uint16_t)highbyte)<<8;
 }
