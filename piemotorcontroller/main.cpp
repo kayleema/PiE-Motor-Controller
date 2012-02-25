@@ -16,7 +16,7 @@
 #define ENABLE_LEDS
 
 //I2C bus address (hardcoded)
-uint8_t I2C_ADDRESS = 0x0B;
+uint8_t I2C_ADDRESS = 0x0A;
 
 /** Pin Definitions **/
 //H-Bridge
@@ -51,8 +51,20 @@ void setupLEDs(){
 #define pwmReg          (*((uint8_t *)(reg+0x02)))
 #define feedbackReg     (*((uint16_t*)(reg+0x10)))
 #define encoderCountReg (*((int32_t *)(reg+0x20)))
+#define timeoutReg      (*((uint16_t*)(reg+0x80)))
 #define stressReg       (*((uint8_t *)(reg+0xA0)))
 #define nyanReg         (*((uint8_t *)(reg+0xA1)))
+
+/////////// Motor Filter Registers ////////////
+
+int16_t slewRateLimitedMotorV;
+int16_t currentLimitedMotorV;
+uint8_t finalMagnitude;
+uint8_t finalDirection;
+
+uint16_t timeSinceLastCommand = 0;  //Used for timeout in timer 2
+
+///////////////////////////////////////////////
 
 void setup();
 void loop();
@@ -79,12 +91,16 @@ void motorSetup()
   // Set FS pin as input, pull up enabled
   DDRB &= ~(1 << FS);
   PORTB |= (1 << FS);
+  
+  //Set Feedback pin as input
+  DDRC &= ~(1 << FB);
 
   // Set up motor pwm (Timer 0)
   // Set Timer 0 to phase-correct PWM, output on OC0A
   TCCR0A |= (1 << WGM00) | (1 << COM0A1);
-  // Set clock source to F_CPU/8
-  TCCR0B |= (1 << CS01);
+  // Set clock source to F_CPU/64
+  TCCR0B |= (1 << CS01)|(1 << CS00);
+  //~3922kHz
 }
 
 void setupEncoder(){
@@ -92,6 +108,32 @@ void setupEncoder(){
   EIMSK = 0x03;
   //DDRD &= ~( (1 << ENCA) & (1 << ENCB) );
   sei();
+}
+
+//utility functions
+int16_t max(int16_t a,int16_t b){
+    if(a > b){
+        return a;
+    }
+    else{
+        return b;
+    }
+}
+int16_t min(int16_t a,int16_t b){
+    if(a > b){
+        return b;
+    }
+    else{
+        return a;
+    }
+}
+int16_t abs(int16_t a){
+    if(a < 0){
+        return -a;
+    }
+    else{
+        return a;
+    }
 }
 
 int main(void)
@@ -119,14 +161,23 @@ void setup()
   setupLEDs();
   
   setupEncoder();
+  
+  //Setup timer 2
+  // Set clock source to F_CPU/256
+  TCCR2B |= (1<<CS22)|(1<<CS21)|(1<<CS20);
+  //Enable Overflow interrupt
+  TIMSK2 |= (1<<TOIE2);
+  
+  ///Default timeout is 100 iterations of timer2
+  timeoutReg = 122;
 }
 
 //called continuously after startup
 void loop(){
-  setMotorDir(directionReg);
-  setMotorPWM(pwmReg);
-  
-  feedbackReg=readFeedback();
+  //setMotorDir(directionReg);
+  //setMotorPWM(pwmReg);
+  setMotorDir(finalDirection);
+  setMotorPWM(finalMagnitude);
   
   while(stressReg){
   	setMotorDir(1);
@@ -143,6 +194,7 @@ void loop(){
 
 //called when I2C data is received
 void receiveEvent(int count){
+  timeSinceLastCommand = 0;
   //set address
   addr = Wire.receive();
   //read data
@@ -242,15 +294,134 @@ ISR(INT1_vect)
 }
 
 uint16_t readFeedback(){
-    PRR &= ~(1<<PRADC);
-    ADCSRB = 0x00;
-    ADMUX = 0x00;//select pin 0 and set reference to AREF    
-    ADCSRA = 0x80;//enable adc (ADCEN)
+    uint8_t lowbyte, highbyte;
+    
+    PRR &= ~(1<<PRADC);    
+    ADCSRA = (1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0)|(1<<ADEN); //enable adc1(ADCEN)
+    ADCSRB = 0x00;//free running mode
+    ADMUX = 1<<REFS0;//select pin 0 and set reference to AVcc
     ADCSRA |= 1<<ADSC;//start conversion
     while( ADCSRA & (1<<ADSC) ){
         //wait for ADC Result
     }
-    uint8_t lowbyte = ADCL;
-    uint8_t highbyte = ADCH & 0x03;
+    lowbyte = ADCL;
+    highbyte = ADCH & 0x03;
     return lowbyte | ((uint16_t)highbyte)<<8;
 }
+
+//Timer 2 Interrupt
+uint16_t overspikes = 0;
+uint16_t max_overspikes = 50;
+uint16_t period = 250;
+
+uint16_t feedback_limit = 200;
+
+uint16_t iterations_this_period = 0;
+
+uint8_t rampingDown = 0;
+uint8_t rampingUp = 0;
+
+uint8_t rampupLimit = 0;
+uint8_t rampDownLimit = 255;
+
+ISR(TIMER2_OVF_vect)
+{
+  if( directionReg==2 ){
+    finalMagnitude = pwmReg;
+    finalDirection = 2;
+    return;
+  }
+  
+  iterations_this_period++;
+  
+  ////////// Timeout
+  
+  timeSinceLastCommand++;
+  if(timeSinceLastCommand > timeoutReg && timeoutReg != 0){
+    pwmReg = 0;
+  }
+  
+  ////////// Slew rate limit
+  
+  if(directionReg == 0){
+    slewRateLimitedMotorV = -pwmReg;
+  }
+  else{
+    slewRateLimitedMotorV = pwmReg;
+  }
+  
+  
+  ////////// Current Limit 
+  
+  //check if period is over
+  if(iterations_this_period > period){
+    iterations_this_period = 0;
+    if(rampingDown){
+       rampingDown = 0;
+       rampupLimit = 128;
+       rampingUp = 1;
+    }
+    else if(rampingUp){
+       rampingUp = 0;
+    }
+    overspikes = 0;
+  }
+  
+  //Check if we have drawn too much current yet
+  if(overspikes > max_overspikes){
+    //start rampdown
+    rampingDown = 1;
+    rampDownLimit = abs(currentLimitedMotorV);
+    rampingUp = 0;
+    overspikes = 0;
+    iterations_this_period = 0;
+  }
+  
+  //read current feedback analog pin
+  feedbackReg=readFeedback();
+  //check if it exceeds our limit
+  if(feedbackReg > feedback_limit){
+    overspikes++;
+  }
+  
+  
+  if( rampingDown ){
+    if( rampDownLimit > 128 ){
+      rampDownLimit--;
+    }
+    int16_t directionalRampDownLimit;
+    if( directionReg == 1 ){
+        directionalRampDownLimit = rampDownLimit;
+        currentLimitedMotorV = min(directionalRampDownLimit, slewRateLimitedMotorV);
+    }
+    else{
+        directionalRampDownLimit = -rampDownLimit;
+        currentLimitedMotorV = max(directionalRampDownLimit, slewRateLimitedMotorV);
+    }
+  }
+  else if( rampingUp ){
+    if( rampupLimit < 255 ){
+        rampupLimit++;
+    }
+    int16_t directionalRampupLimit;
+    if( directionReg == 1 ){
+        directionalRampupLimit = rampupLimit;
+        currentLimitedMotorV = min(directionalRampupLimit, slewRateLimitedMotorV);
+    }
+    else{
+        directionalRampupLimit = -rampupLimit;
+        currentLimitedMotorV = max(directionalRampupLimit, slewRateLimitedMotorV);
+    }
+  }
+  else{
+    currentLimitedMotorV = slewRateLimitedMotorV;
+  }
+  reg[0xA1] = rampingUp;
+  reg[0xA2] = rampingDown;
+  reg[0xA3] = iterations_this_period;
+  reg[0xA4] = rampDownLimit;
+  
+  finalMagnitude = abs(currentLimitedMotorV);
+  finalDirection = currentLimitedMotorV > 0;
+}
+
