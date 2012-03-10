@@ -1,11 +1,7 @@
 /*
  * Berkeley Pioneers in Engineering
- * PiE Motor Controller Firmware (Simple Version)
+ * PiE Motor Controller Firmware
  * 
- * This is the simplest possible version of firmware
- * for the PiE motor controller.  This version of the 
- * firmware will only support setting the motor PWM 
- * frequency and the direction.
  */
 
 #include <avr/io.h>
@@ -16,7 +12,7 @@
 #define ENABLE_LEDS
 
 //I2C bus address (hardcoded)
-uint8_t I2C_ADDRESS = 0x0A;
+uint8_t I2C_ADDRESS = 0x0D;
 
 /** Pin Definitions **/
 //H-Bridge
