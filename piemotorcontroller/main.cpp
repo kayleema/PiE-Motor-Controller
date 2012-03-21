@@ -264,7 +264,7 @@ ISR(INT0_vect)
     }
   }
   else{
-    if( PIND & (1<<ENCB) || 1 ){
+    if( PIND & (1<<ENCB) ){
       encoderCountReg++;
     }
     else{
