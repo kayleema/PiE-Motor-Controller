@@ -12,7 +12,7 @@
 #define ENABLE_LEDS
 
 //I2C bus address (hardcoded)
-uint8_t I2C_ADDRESS = 0x0D;
+uint8_t I2C_ADDRESS = 0x0C;
 
 /** Pin Definitions **/
 //H-Bridge
