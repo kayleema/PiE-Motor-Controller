@@ -1,17 +1,15 @@
 Firmware for the Motor Controller developed in-house
 by Berkeley Pioneers in Engineering.
 
-The following projects can be opened with the Arduino 
-IDE available at www.arduino.cc
-
 -- "/piemotorcontroller": Basic firmware for the 
-   motor controller.
+   motor controller written in AVR C and utilizing the
+   Wire library from Arduino.
 
--- "/piemotorledblinker": Firmware which blinks the 
-   status LEDs to confirm that the microcontroller is
-   working.
+-- "/piemotorledblinker": Firmware written in AVR C 
+   which blinks the status LEDs to confirm that the 
+   microcontroller is working.
 
--- "/i2ctester": Firmware running on another Arduino 
+-- "/i2ctester": Firmware to running on an Arduino 
    which translates commands sent via the serial port
    to I2C messages for the purpose of sending test 
    commands to the motor controller.
@@ -20,4 +18,4 @@ IDE available at www.arduino.cc
    translates commands sent via the serial port to 
    SPI data for the purpose of sending test commands.
    Not used for the motor controller, but may be 
-   useful for testing some SPI sensors for PiE.
+   useful for testing some SPI sensors in the future.
